@@ -32,4 +32,4 @@
 *.app
 
 # Idea
-/idea
+.idea/

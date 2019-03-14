@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <cstdio>
 #include <cstring>
+#include <poll.h>
 
 int main() {
     struct sockaddr_in server = {};
@@ -28,18 +29,33 @@ int main() {
     }
     listen(sockDesc, SOMAXCONN);
 
+    struct pollfd poll_struct[SOMAXCONN];
+    poll_struct[0].fd = sockDesc;
+    poll_struct[0].events = POLLIN;
+    int index = 1;
+
     while (true) {
-        int connfd = accept(sockDesc, NULL, NULL);
-        printf("New connection\n");
-        while (true) {
-            ssize_t k = read(connfd, buffer, size);
-            if (k <= 0) {
-                printf("Client disconnected\n");
-                close(connfd);
-                break;
+        if (poll(poll_struct, SOMAXCONN, 0) > 0) {
+            if ((poll_struct[0].revents & POLLIN) > 0) {
+                int conn_fd = accept(sockDesc, NULL, NULL);
+                printf("New connection\n");
+                poll_struct[index].fd = conn_fd;
+                poll_struct[index].events = POLLIN;
+                index++;
             }
-            printf("Message received: %s", buffer);
-            write(connfd, hello, strlen(hello));
+            for (int i = 1; i < index; i++) {
+                if ((poll_struct[i].revents & POLLIN) > 0) {
+                    ssize_t k = read(poll_struct[i].fd, buffer, size);
+                    if (k <= 0) {
+                        printf("Client disconnected\n");
+                        close(poll_struct[i].fd);
+                        //todo: delete, container
+                        break;
+                    }
+                    printf("Message received: %s", buffer);
+                    write(poll_struct[i].fd, hello, strlen(hello));
+                }
+            }
         }
     }
 }

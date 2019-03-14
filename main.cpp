@@ -49,7 +49,10 @@ int main() {
                     if (k <= 0) {
                         printf("Client disconnected\n");
                         close(poll_struct[i].fd);
-                        //todo: delete, container
+                        for (int j = i; j < index; j++) {
+                            poll_struct[j] = poll_struct[j + 1];
+                        }
+                        index--;
                         break;
                     }
                     printf("Message received: %s", buffer);

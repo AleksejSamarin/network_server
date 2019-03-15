@@ -4,14 +4,14 @@
 #include <unistd.h>
 #include <cstdio>
 #include <cstring>
+#include <iconv.h>
 
 int main() {
     struct sockaddr_in server = {};
     socklen_t len = sizeof(struct sockaddr_in);
     int sockDesc;
     const int size = 1024;
-    char buffer[size];
-    char hello[] = "From server";
+    char buffer1[size], buffer2[size];
 
     server.sin_family = AF_INET;
     server.sin_port = htons(2345);
@@ -42,7 +42,7 @@ int main() {
             }
             for (int i = 1; i < index; i++) {
                 if ((poll_struct[i].revents & POLLIN) > 0) {
-                    ssize_t k = read(poll_struct[i].fd, buffer, size);
+                    ssize_t k = read(poll_struct[i].fd, buffer1, size);
                     if (k <= 0) {
                         printf("Client disconnected\n");
                         close(poll_struct[i].fd);
@@ -52,8 +52,15 @@ int main() {
                         index--;
                         break;
                     }
-                    printf("Message received: %s", buffer);
-                    write(poll_struct[i].fd, hello, strlen(hello));
+                    size_t src_len = size;
+                    size_t dst_len = size;
+                    char *p_in = buffer1;
+                    char *p_out = buffer2;
+                    iconv_t conv = iconv_open("ASCII","CP1251");
+                    iconv(conv, &p_in, &src_len, &p_out, &dst_len);
+                    iconv_close(conv);
+                    printf("Message received: %s", buffer1);
+                    write(poll_struct[i].fd, buffer2, strlen(buffer2));
                 }
             }
         }

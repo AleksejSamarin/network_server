@@ -1,12 +1,9 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
-#include <sys/types.h>  //
-#include <netinet/in.h> //
-#include <arpa/inet.h>  //
+#include <poll.h>
 #include <unistd.h>
 #include <cstdio>
 #include <cstring>
-#include <poll.h>
 
 int main() {
     struct sockaddr_in server = {};
